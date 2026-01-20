@@ -2,7 +2,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // --- Route: GET /  (tiny catchy webpage) ---
 if (url.pathname === "/") {
   const html = `<!doctype html>
 <html>
@@ -79,12 +78,10 @@ if (url.pathname === "/") {
 }
 
 
-    // --- Helper: get feedback list from KV or seed mock data ---
     async function getFeedbackList() {
       const raw = await env.FEEDBACK_KV.get("feedback:list");
       if (raw) return JSON.parse(raw);
 
-      // Seed mock feedback (allowed by assignment)
       const seeded = [
         { source: "support", text: "Onboarding is confusing — docs felt scattered.", ts: Date.now() - 86400000 },
         { source: "github", text: "Wrangler deploy errors didn’t tell me which binding was missing.", ts: Date.now() - 70000000 },
@@ -96,7 +93,6 @@ if (url.pathname === "/") {
       return seeded;
     }
 
-    // --- Route: POST /ingest  (optional: add feedback) ---
     if (url.pathname === "/ingest" && request.method === "POST") {
       const body = await request.json().catch(() => null);
       if (!body?.text) {
@@ -115,9 +111,7 @@ if (url.pathname === "/") {
       });
     }
 
-    // --- Route: GET /briefing  (the unconventional “radio briefing”) ---
     if (url.pathname === "/briefing") {
-      // Simple cache: if you generated in last ~10 min, reuse it
       const cached = await env.FEEDBACK_KV.get("briefing:latest");
       const cachedAt = await env.FEEDBACK_KV.get("briefing:latest:ts");
       if (cached && cachedAt && (Date.now() - Number(cachedAt) < 10 * 60 * 1000)) {
@@ -145,7 +139,6 @@ FEEDBACK:
 ${combined}
 `;
 
-      // Call Workers AI. If the model name changes or fails, you still have a prototype — log it!
       let outputText = "";
       try {
         const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
@@ -183,7 +176,6 @@ METRICS TO WATCH
       return new Response(outputText, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
     }
 
-    // Default
     return new Response("Try / or /briefing", { status: 200 });
   }
 };
